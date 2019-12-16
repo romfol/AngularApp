@@ -9,13 +9,6 @@ import { catchError, map, tap } from "rxjs/operators";
   providedIn: "root"
 })
 export class HeroService {
-  getHeroes (): Observable<Hero[]> {
-    return this.http.get<Hero[]>(this.heroesUrl)
-      .pipe(
-        tap(_ => this.log('fetched heroes')),
-        catchError(this.handleError<Hero[]>('getHeroes', []))
-      );
-  }
 
   private handleError<T> (operation = 'operation', result?: T) {
     return (error: any): Observable<T> => {
@@ -29,6 +22,30 @@ export class HeroService {
       // Let the app keep running by returning an empty result.
       return of(result as T);
     };
+  }
+
+
+
+  private log(message: string) {
+    this.messageService.add(`HeroService: ${message}`);
+  }
+  private heroesUrl = "api/heroes";
+
+  httpOptions = {
+    headers: new HttpHeaders({ 'Content-Type': 'application/json' })
+  };
+
+  constructor(
+    private messageService: MessageService,
+    private http: HttpClient
+  ) {}
+
+  getHeroes (): Observable<Hero[]> {
+    return this.http.get<Hero[]>(this.heroesUrl)
+      .pipe(
+        tap(_ => this.log('fetched heroes')),
+        catchError(this.handleError<Hero[]>('getHeroes', []))
+      );
   }
 
   getHero(id: number): Observable<Hero> {
@@ -46,17 +63,10 @@ export class HeroService {
     );
   }
 
-  private log(message: string) {
-    this.messageService.add(`HeroService: ${message}`);
+  addHero (hero: Hero): Observable<Hero> {
+    return this.http.post<Hero>(this.heroesUrl, hero, this.httpOptions).pipe(
+      tap((newHero: Hero) => this.log(`added hero w/ id=${newHero.id}`)),
+      catchError(this.handleError<Hero>('addHero'))
+    );
   }
-  private heroesUrl = "api/heroes";
-
-  httpOptions = {
-    headers: new HttpHeaders({ 'Content-Type': 'application/json' })
-  };
-
-  constructor(
-    private messageService: MessageService,
-    private http: HttpClient
-  ) {}
 }
